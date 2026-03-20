@@ -11,12 +11,12 @@
 
 ## Overview
 
-A TON smart contract is a program stored on the TON blockchain and executed by the [TON Virtual Machine](https://docs.ton.org/tvm/overview#tvm-overview) (TVM). Each contract is identified by a unique address and consists of two main components:
+A TON smart contract is a program stored on the TON blockchain and executed by the [TON Virtual Machine](https://docs.ton.org/tvm/overview#tvm-overview) (TVM). Each contract has a unique address and consists of two main components:
 
 - Code — compiled TVM instructions that define the contract's logic.
 - Data - persistent state that stores information between interactions.
 
-TON contracts can be written in multiple languages. This tutorial uses Tolk, the recommended language for new projects, and [Blueprint](https://docs.ton.org/contract-dev/blueprint/cli) — TON's official development framework for scaffolding, compiling, testing, and deploying contracts.
+TON offers multiple languages for writing smart contracts. This tutorial uses Tolk, the recommended language for new projects, and [Blueprint](https://docs.ton.org/contract-dev/blueprint/cli) — TON's official development framework for scaffolding, compiling, testing, and deploying contracts.
 
 > If you're coming from the EVM development ecosystem, consider reading about [key TON aspects](https://docs.ton.org/from-ethereum) and [basic Tolk syntax](https://docs.ton.org/languages/tolk/basic-syntax) before proceeding with this tutorial.
 
@@ -84,8 +84,6 @@ WALLET_VERSION="v5r1"                             # Find this in your wallet app
 CONTRACT_ADDRESS=""                               # Fill in after deployment
 ```
 
-You can find your wallet version in your wallet app's settings or by looking up your address on [Tonscan](https://testnet.tonscan.org).
-
 ### Write Your First Contract
 
 Your first contract is a simple Hello World contract that stores a single message on-chain. It exposes a `message()` getter to read it, and accepts an `UpdateMessage` transaction to overwrite it.
@@ -136,6 +134,18 @@ fun onInternalMessage(in: InMessage) {
     }
 }
 ```
+
+The contract has the following components:
+
+- `struct Storage` — defines the contract's persistent state. Data is serialized into a `cell`, TON's fundamental unit of storage.
+
+- `Storage.load()` / `Storage.save()` — deserializes the contract's root data cell into a `Storage` struct, and serializes it back after any state change. TON contracts store all state in a single root data cell, so every read and write goes through these two functions.
+
+- `UpdateMessage` struct — declares the binary format for the update operation. The `0x00000001` annotation is the op code TON uses to identify and route incoming messages.
+
+- `get fun message()` — returns the current message stored on-chain. Runs off-chain and cannot modify state.
+
+- `onInternalMessage()` — the single entry point for all on-chain calls. Every inbound message arrives here first. Op codes are matched via `match` to route to the correct action.
 
 ### Compile the Contract
 
@@ -270,13 +280,15 @@ export async function run(provider: NetworkProvider) {
 
 #### 3. Run the Deploy Command
 
-With your contract, wrapper, and deployment script in place, deploy to testnet using the `WALLET_MNEMONIC` and `WALLET_VERSION` values from your `.env` file:
+With your contract, wrapper, and deployment script in place, deploy to testnet using the Blueprint CLI with the corresponding `.env` variables (`WALLET_MNEMONIC` and `WALLET_VERSION`):
+
 ```bash
 npx blueprint run deployHelloWorldContract --testnet --mnemonic
 ```
-> If you prefer an interactive prompt to choose the script, network, and wallet method, run `npx blueprint run` instead. For all available flags, see the [Blueprint deployment guide](https://docs.ton.org/contract-dev/blueprint/deploy).
+> If you prefer an interactive prompt to choose the script, network and wallet method, run `npx blueprint run` instead. For all available flags and options, see the [Blueprint deployment guide](https://docs.ton.org/contract-dev/blueprint/deploy).
 
 Expected output:
+
 ```bash
 Using file: deployHelloWorldContract
 Connected to wallet at address: 0QDklMt_wtJATm1lc5e2ro0vFalpcodx_0NCKcIovjFsnQVX
@@ -293,7 +305,7 @@ CONTRACT_ADDRESS=<your_contract_address>
 
 ### Interact with the Contract
 
-With your contract deployed, you can now read from and write to it using standalone scripts.
+With your contract deployed, you can now interact with it using standalone scripts.
 
 #### Retrieve the Message
 
@@ -383,10 +395,32 @@ View transaction at: https://testnet.tonviewer.com/EQD2P_X3OglmVY0lTog5w6d6D6gLe
 
 ## Troubleshooting
 
-If you run into issues or have suggestions, you can open an issue in the [official TON documentation repository](https://github.com/ton-org/docs/issues/new?title=Issue%20on%20docs).
+For bug reports or suggestions, open an issue in the [official TON documentation repository](https://github.com/ton-org/docs/issues/new?title=Issue%20on%20docs).
 
 ## Next Steps
 
 - [Testing contracts](https://docs.ton.org/contract-dev/testing/overview)
 - [Debugging contracts](https://docs.ton.org/contract-dev/debug)
 - [Blueprint CLI](https://docs.ton.org/contract-dev/blueprint/cli)
+
+## Footer
+
+Last reviewed: Mar 18th.
+
+Tooling and versions used:
+- Node: v22.22.1
+- Tolk: 1.2
+- Wallet: v5r1
+- Blueprint: 0.4
+
+## Changelog
+
+### v0.3.0
+- Added [Footer](#footer), [Changelog](#changelog), contract components
+
+### v0.2.0
+- Improved [Overview](#overview) and [Deploy the Contract](#deploy-the-contract)
+- Added [Configure Your Environment](#configure-your-environment) and [What You'll Build](#what-youll-build)
+
+### v0.1.0
+- Initial release with a working contract, wrappers, and scripts
